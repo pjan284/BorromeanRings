@@ -22,7 +22,7 @@ package pl.reticular.br.model;
 import pl.reticular.br.utils.Vector3f;
 
 public class Spring {
-	public static void resolveNormal(Vector3f p1, Vector3f p2, float segmentLength) {
+	public static void resolveSpring(Vector3f p1, Vector3f p2, float segmentLength) {
 		float lx = p1.X - p2.X;
 		float ly = p1.Y - p2.Y;
 		float lz = p1.Z - p2.Z;
@@ -48,7 +48,7 @@ public class Spring {
 		p2.add(-diffX, -diffY, -diffZ);
 	}
 
-	public static void resolveRepelling(Vector3f p1, Vector3f p2, float minDistance, float a) {
+	public static void resolveMutualRepelling(Vector3f p1, Vector3f p2, float minDistance, float a) {
 		float lx = p1.X - p2.X;
 		float ly = p1.Y - p2.Y;
 		float lz = p1.Z - p2.Z;
@@ -69,6 +69,29 @@ public class Spring {
 
 			p1.add(diffX, diffY, diffZ);
 			p2.add(-diffX, -diffY, -diffZ);
+		}
+	}
+
+	public static void resolveHardRepelling(Vector3f free, Vector3f frozen, float minDistance) {
+		float lx = free.X - frozen.X;
+		float ly = free.Y - frozen.Y;
+		float lz = free.Z - frozen.Z;
+
+		float currentLengthSquared = lx * lx + ly * ly + lz * lz;
+
+		if (currentLengthSquared < minDistance * minDistance && currentLengthSquared != 0.0f) {
+			float currentLength = (float) Math.sqrt(currentLengthSquared);
+			float diff = minDistance - currentLength;
+
+			lx /= currentLength;
+			ly /= currentLength;
+			lz /= currentLength;
+
+			float diffX = lx * diff;
+			float diffY = ly * diff;
+			float diffZ = lz * diff;
+
+			free.add(diffX, diffY, diffZ);
 		}
 	}
 }

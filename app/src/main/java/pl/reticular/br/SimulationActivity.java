@@ -31,15 +31,18 @@ import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import pl.reticular.br.dialogs.FreezeRingsDialog;
 import pl.reticular.br.dialogs.LineWidthDialog;
 import pl.reticular.br.dialogs.SegmentNumberDialog;
 import pl.reticular.br.engine.SimulationView;
+import pl.reticular.br.model.ChainColor;
 import pl.reticular.br.model.Simulation;
 import pl.reticular.br.utils.PrefsHelper;
 import pl.reticular.br.utils.Setting;
 
 public class SimulationActivity extends AppCompatActivity
-		implements SharedPreferences.OnSharedPreferenceChangeListener {
+		implements SharedPreferences.OnSharedPreferenceChangeListener,
+		FreezeRingsDialog.OnRingClickedListener {
 
 	private SimulationView simulationView;
 
@@ -110,6 +113,9 @@ public class SimulationActivity extends AppCompatActivity
 			case R.id.action_segment_number:
 				showSegmentNumberDialog();
 				break;
+			case R.id.action_freeze_chains:
+				showFreezeChainsDialog();
+				break;
 			case R.id.action_reset:
 				resetSimulation();
 				break;
@@ -150,6 +156,13 @@ public class SimulationActivity extends AppCompatActivity
 		dialog.show(getSupportFragmentManager(), "SegmentNumberDialog");
 	}
 
+	private void showFreezeChainsDialog() {
+		FreezeRingsDialog dialog = new FreezeRingsDialog();
+		dialog.setListener(this);
+		dialog.setFrozen(simulationView.getRenderer().getSimulation().getFrozenChains());
+		dialog.show(getSupportFragmentManager(), "FreezeRingsDialog");
+	}
+
 	private void showAbout() {
 		Intent intent = new Intent(this, AboutActivity.class);
 		startActivity(intent);
@@ -166,5 +179,10 @@ public class SimulationActivity extends AppCompatActivity
 	private void resetSimulation() {
 		Simulation simulation = createNewSimulation();
 		simulationView.getRenderer().setSimulation(simulation);
+	}
+
+	@Override
+	public void onRingClicked(ChainColor color, boolean checked) {
+		simulationView.getRenderer().setFrozenChain(color, checked);
 	}
 }

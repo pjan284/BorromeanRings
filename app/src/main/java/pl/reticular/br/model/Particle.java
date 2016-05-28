@@ -76,4 +76,8 @@ public class Particle implements Savable {
 		if (pos.Z > areaDimensions.Z) pos.Z = areaDimensions.Z;
 		if (pos.Z < -areaDimensions.Z) pos.Z = -areaDimensions.Z;
 	}
+
+	public void reset() {
+		pos.set(prevPos);
+	}
 }

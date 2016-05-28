@@ -11,6 +11,11 @@
         app:showAsAction="never" />
 
     <item
+        android:id="@+id/action_freeze_chains"
+        android:title="@string/freeze_rings"
+        app:showAsAction="never" />
+
+    <item
         android:id="@+id/action_reset"
         android:title="@string/reset"
         app:showAsAction="never" />

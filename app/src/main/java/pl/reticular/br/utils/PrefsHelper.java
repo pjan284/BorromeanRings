@@ -43,7 +43,7 @@ public class PrefsHelper {
 
 	private static final int DefaultLineWidth = 5;
 
-	private static final int DefaultSegmentNumber = 32;
+	private static final int DefaultSegmentNumber = 48;
 
 	public void init(Context context) {
 		prefs = context.getSharedPreferences(PREFS_NAME, 0);

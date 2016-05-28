@@ -19,18 +19,19 @@ package pl.reticular.br.engine;
  * along with Borromean Rings. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import android.graphics.Color;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
 import android.view.MotionEvent;
 
-import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.Map;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
 import pl.reticular.br.model.Chain;
+import pl.reticular.br.model.ChainColor;
 import pl.reticular.br.model.Particle;
 import pl.reticular.br.model.Simulation;
 import pl.reticular.br.utils.MathUtils;
@@ -47,8 +48,8 @@ public class SimulationRenderer implements GLSurfaceView.Renderer {
 	private float pMatrix[];
 
 	private Simulation simulation;
-	private ArrayList<ChainGeometry> chainGeometries;
-	private ArrayList<float[]> chainColors;
+	private EnumMap<ChainColor, ChainGeometry> chainGeometries;
+	private EnumMap<ChainColor, float[]> chainColors;
 
 	private SimpleShader simpleShader;
 
@@ -79,18 +80,14 @@ public class SimulationRenderer implements GLSurfaceView.Renderer {
 	}
 
 	private void createDisplayBuffers() {
-		chainGeometries = new ArrayList<>();
-		chainColors = new ArrayList<>();
-		for (Chain chain : simulation.getChains()) {
-			ChainGeometry chainGeometry = new ChainGeometry(chain);
-			chainGeometries.add(chainGeometry);
+		chainGeometries = new EnumMap<>(ChainColor.class);
+		chainColors = new EnumMap<>(ChainColor.class);
+		Map<ChainColor, Chain> chains = simulation.getChains();
+		for (ChainColor chainColor : ChainColor.values()) {
+			Chain chain = chains.get(chainColor);
+			chainGeometries.put(chainColor, new ChainGeometry(chain));
 
-			float color[] = {
-					Color.red(chain.color) / 255.0f,
-					Color.green(chain.color) / 255.0f,
-					Color.blue(chain.color) / 255.0f,
-					1.0f};
-			chainColors.add(color);
+			chainColors.put(chainColor, makeColor(chainColor));
 		}
 	}
 
@@ -109,12 +106,11 @@ public class SimulationRenderer implements GLSurfaceView.Renderer {
 		synchronized (this) {
 			simulation.update(areaDimensions);
 
-			for (int i = 0; i < chainGeometries.size(); i++) {
-				chainGeometries.get(i).update(simulation.getChains().get(i));
-			}
+			for (ChainColor chainColor : ChainColor.values()) {
+				ChainGeometry geometry = chainGeometries.get(chainColor);
+				geometry.update(simulation.getChains().get(chainColor));
 
-			for (int i = 0; i < chainGeometries.size(); i++) {
-				simpleShader.draw(mvMatrix, pMatrix, chainGeometries.get(i), chainColors.get(i));
+				simpleShader.draw(mvMatrix, pMatrix, geometry, chainColors.get(chainColor));
 			}
 		}
 	}
@@ -208,5 +204,24 @@ public class SimulationRenderer implements GLSurfaceView.Renderer {
 
 	public Simulation getSimulation() {
 		return simulation;
+	}
+
+	public void setFrozenChain(ChainColor frozenChain, boolean frozen) {
+		synchronized (this) {
+			simulation.setFrozenChain(frozenChain, frozen);
+		}
+	}
+
+	private float[] makeColor(ChainColor color) {
+		switch (color) {
+			case Red:
+				return new float[]{1.0f, 0.0f, 0.0f, 1.0f};
+			case Green:
+				return new float[]{0.0f, 1.0f, 0.0f, 1.0f};
+			case Blue:
+				return new float[]{0.0f, 0.0f, 1.0f, 1.0f};
+			default:
+				return new float[]{0.0f, 0.0f, 0.0f, 1.0f};
+		}
 	}
 }

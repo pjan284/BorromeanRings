@@ -35,17 +35,16 @@ public class Chain implements Savable {
 	public Particle particles[];
 	private float lengths[];
 	private float maxLength;
-	public int color;
+	private boolean frozen;
 
 	private enum Keys {
 		Particles,
 		Lengths,
-		Color
+		Frozen
 	}
 
-	public Chain(ArrayList<Vector2d> points, Vector3f rotAxis, float rotAngle, int color) {
+	public Chain(ArrayList<Vector2d> points, Vector3f rotAxis, float rotAngle) {
 		rotAxis.normalize();
-		this.color = color;
 
 		int sectors = points.size();
 
@@ -77,6 +76,8 @@ public class Chain implements Savable {
 				maxLength = length;
 			}
 		}
+
+		frozen = false;
 	}
 
 	public Chain(JSONObject json) throws JSONException {
@@ -100,7 +101,7 @@ public class Chain implements Savable {
 			}
 		}
 
-		color = json.getInt(Keys.Color.toString());
+		frozen = json.getBoolean(Keys.Frozen.toString());
 	}
 
 	@Override
@@ -120,15 +121,15 @@ public class Chain implements Savable {
 		}
 		state.put(Keys.Lengths.toString(), lengthArray);
 
-		state.put(Keys.Color.toString(), color);
+		state.put(Keys.Frozen.toString(), frozen);
 
 		return state;
 	}
 
 	public void resolve() {
-		Spring.resolveNormal(particles[0].pos, particles[particles.length - 1].pos, lengths[lengths.length - 1]);
+		Spring.resolveSpring(particles[0].pos, particles[particles.length - 1].pos, lengths[lengths.length - 1]);
 		for (int i = 0; i < particles.length - 1; i++) {
-			Spring.resolveNormal(particles[i].pos, particles[i + 1].pos, lengths[i]);
+			Spring.resolveSpring(particles[i].pos, particles[i + 1].pos, lengths[i]);
 		}
 	}
 
@@ -142,16 +143,16 @@ public class Chain implements Savable {
 
 			Vector3f p1 = particles[i].pos;
 			for (int j = i + 2; j < last; j++) {
-				Spring.resolveRepelling(p1, particles[j].pos, maxLength, 0.5f);
+				Spring.resolveMutualRepelling(p1, particles[j].pos, maxLength, 0.5f);
 			}
 		}
 	}
 
-	public void resolveOtherCollisions(Chain other) {
+	public void resolveMutualCollisions(Chain other) {
 		for (Particle part1 : particles) {
 			Vector3f p1 = part1.pos;
 			for (Particle part2 : other.particles) {
-				Spring.resolveRepelling(p1, part2.pos, maxLength, 0.5f);
+				Spring.resolveMutualRepelling(p1, part2.pos, maxLength * 1.5f, 0.5f);
 			}
 		}
 	}
@@ -161,23 +162,37 @@ public class Chain implements Savable {
 
 		for (int i = 0; i < particles.length - 2; i++) {
 			float d = lengths[i] + lengths[i + 1];
-			Spring.resolveRepelling(particles[i].pos, particles[i + 2].pos, d, a);
+			Spring.resolveMutualRepelling(particles[i].pos, particles[i + 2].pos, d, a);
 		}
 
 		float d1 = lengths[particles.length - 2] + lengths[particles.length - 1];
-		Spring.resolveRepelling(particles[particles.length - 2].pos, particles[0].pos, d1, a);
+		Spring.resolveMutualRepelling(particles[particles.length - 2].pos, particles[0].pos, d1, a);
 
 		float d2 = lengths[particles.length - 1] + lengths[0];
-		Spring.resolveRepelling(particles[particles.length - 1].pos, particles[1].pos, d2, a);
+		Spring.resolveMutualRepelling(particles[particles.length - 1].pos, particles[1].pos, d2, a);
 	}
 
 	public void update(Vector3f areaDimensions) {
-		for (Particle particle : particles) {
-			particle.update(areaDimensions);
+		if (frozen) {
+			for (Particle particle : particles) {
+				particle.reset();
+			}
+		} else {
+			for (Particle particle : particles) {
+				particle.update(areaDimensions);
+			}
 		}
 	}
 
 	public float getSafeDragDistance() {
 		return maxLength * 0.2f;    //Arbitrary
+	}
+
+	public void setFrozen(boolean f) {
+		frozen = f;
+	}
+
+	public boolean isFrozen() {
+		return frozen;
 	}
 }
